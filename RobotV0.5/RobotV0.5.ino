@@ -120,7 +120,7 @@ void loop() {
     MotorSis(speed, rota);
     delay(30);
   }
-  MotorSis(0,0);
+  MotorSis();
   delay(30);
 }
 
@@ -129,7 +129,7 @@ void sist(){
     server.handleClient();
 }
 
-void MotorSis(int V, int R) { // V = Velocidad, R = Rotacion o grado de Servo 
+void MotorSis(int V = 0, int R = 90) { // V = Velocidad, R = Rotacion o grado de Servo 
 
   if (V < 0){
  
