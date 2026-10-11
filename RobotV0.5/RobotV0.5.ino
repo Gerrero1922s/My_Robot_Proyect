@@ -2,12 +2,13 @@
 
 #include <WiFiS3.h>
 #include <UnoR4WiFi_WebServer.h>
+#include "web_html.h"
 
-const char SSID[] = "Desousa";
-const char PASSWORD[] = "sebas132?";
+const char SSID[] = "moto";
+const char PASSWORD[] = "123456789";
 int status = WL_IDLE_STATUS;
 
-UnoR4WiFi_WebServer server;
+UnoR4WiFi_WebServer server(80);
 UnoR4WiFi_WebSocket* webSocket;
 
 Servo myservo;
@@ -53,15 +54,21 @@ void onClientClose(net::WebSocket& ws, const net::WebSocket::CloseCode code, con
    Serial.println(reason);
 }
 
+void handleHome(WiFiClient& client, const String& method, const String& request, const QueryParams& params, const String& jsonData) {
+  server.sendResponse(client, htmlPage);
+}
 
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
+  while(!Serial);
   myservo.attach(10);
 
   pinMode(input1,OUTPUT);
   pinMode(input2,OUTPUT);
   pinMode(input3,OUTPUT);
+
+  status = WiFi.beginAP(SSID, PASSWORD);
 
   if (WiFi.status() == WL_NO_SHIELD) {
     Serial.print("Modulo No Dectetados");
@@ -69,17 +76,20 @@ void setup() {
     while(true);
   }
 
-  while (status != WL_CONNECTED) {
-    Serial.print("Conectandose a: ");
-    Serial.println(SSID);
-    status = WiFi.begin(SSID, PASSWORD);
+  while (status != WL_AP_LISTENING) {
+    Serial.println("Failt to create the conextion");
+    status = WiFi.status();
     delay(4500);
+
   } 
-  Serial.print("IP: ");
-  Serial.println(WiFi.localIP());
+  delay(1000);
+  
+  server.addRoute("/", handleHome);
+
+  webSocket = server.enableWebSocket(81);
 
   server.begin();
-  webSocket = server.enableWebSocket(81);
+
 
   if (webSocket != nullptr) {
     // Set up WebSocket event handlers
@@ -107,6 +117,7 @@ void loop() {
 
   analogWrite(input3, speed);
   server.handleWebSocket();
+  server.handleClient();
   delay(30);
 }
 
