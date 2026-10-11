@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   
+
+    <style>
+        /* 1. Limpieza del Header usando Flexbox para alinear todo verticalmente al centro */
+        .header {
+            display: flex;
+            align-items: center;         /* Alínea verticalmente todo al centro */
+            justify-content: space-between; /* Distribuye menú a la izquierda, título al centro, ayuda a la derecha */
+            padding: 10px 20px;          /* Espaciado interno para que no toque los bordes */
+            background-color: rgba(20, 163, 199, 0.822);
+            position: relative;          /* Contenedor de referencia para el menú desplegable #help */
+        }
+
+        /* 2. Estilo para el botón de las tres líneas (hamburguesa) */
+        div.header button {
+            background-color: rgba(20, 120, 145, 0.267);
+            font-size: 14px;
+            line-height: 12px;           /* Ajustado para que las líneas luzcan juntas como un menú */
+            padding: 5px 10px;
+            border: 1px solid rgba(255,255,255,0.3);
+            cursor: pointer;
+        }
+
+        /* Quitamos las propiedades duplicadas y absolutas que rompían el diseño */
+        div.header {
+            display: block;
+        }
+
+        /* Eliminamos márgenes por defecto del título para un centrado perfecto */
+        .header h1 {
+            margin: 0;
+            flex-grow: 1;                /* Empuja al título a ocupar el centro */
+            text-align: center;
+        }
+
+        .header h5 {
+            margin: 0;
+        }
+
+        main {
+            height: 400px;
+        }
+
+        /* Ajuste vertical del panel de control central */
+        .Control {
+            position: relative;
+            text-align: center;
+            top: 50%;                    /* Cambiado a 50% para un centrado más real */
+            transform: translateY(-50%); /* Centrado vertical absoluto respecto al contenedor main */
+        }
+
+        .Control button {
+            color: brown;
+            margin-bottom: 4px;
+            width: 30px;
+            height: 30px;
+        }
+
+        footer { 
+            text-align: center;
+        }
+
+        /* 3. Panel desplegable de ayuda ajustado respecto al nuevo header */
+        #help {
+            position: absolute;
+            top: 100%;                   /* Se despliega exactamente debajo del header */
+            left: 20px;                  /* Alineado con el botón de menú */
+            height: 300px;
+            width: 200px;
+            display: none;
+            background-color: rgba(36, 36, 51, 0.9); /* Más opaco para leer mejor sobre el fondo */
+            z-index: 10;                 /* Asegura que flote por encima del contenido main */
+        }
+
+        
+    </style>
+    <title>Robotic Control</title>
+<body>
+    <header class="header">
+        <div class="header"><button onclick="displayBlock()">-<br>-<br>-<br></button></div>
+        <h1> RC Control </h1>
+        <h5><button onclick="alert('KeyWord: \n W = Foward, \n A = Right, S = Back, D = Left');">help</button> </h5>
+        <div id ="help">
+            <button onclick="socketConexion()">Start</button>
+        </div>
+    </header>
+    <main>
+        <div class = "Control"> 
+            <div>
+                <button> W </button>
+                
+            </div>
+            <div>
+                <button>A</button>
+                <button>S</button>
+                <button>D</button>
+            </div>
+        </div>
+    </main>
+    <footer>
+        <h4 class="Creditos">Creditos</h4>
+        <p>Author: Sebastian Bell
+            
+        </p>
+    </footer>
+    <script>
+        //Aqui va hacer lo que van ser el sistema logico del sitio wed
+        /*
+        Esto se va encargar en mandar los o Packet of Information atraves de la red local hacia el arduino.
+        nos permitira que los Botones del WedSite tenga funciones y puedan mandar Datos atraves de la red.
+        */
+        // Variables
+        let connected = false;
+        let socket = null;
+        const keySave = new Map();
+        // Ip informacion
+        let ipInfo = '192.168.4.1';
+        let puerto = "81";
+
+        function socketConexion(){
+            if (connected){
+                console.log("Cerrando conxion");
+                closeConexion();
+            }else{
+                console.log("Inciando Conexion");
+                startConexion();
+            }
+        }
+        function startConexion(){
+            try
+            {
+                socket  = new WebSocket(`ws://${ipInfo}:${puerto}`); // Es el puerto que se tiene que conectar
+
+                socket.onopen = () => {
+                    console.log(`Conexion establecidad ${ipInfo}`);
+                    socket.send("Hello World");
+                    connected = true;
+                }
+
+                socket.onmessage = (event) => {
+                    console.log(`Mensaje Recivido: ${event.data}`);
+                }
+
+                socket.onclose = (event) => {
+                    if (event.wasClean) {
+                        alert(`Conexion se a cerrado con exito, y limpia mente. Code= ${event.code} reason= ${event.reason}`);
+                        connected = false;
+                    }else{
+                        alert(`Conexion colapsado o Conexcion Cerrada \n Posible falla IP Error: ${ipInfo} \n Puerto: ${puerto}`);
+                        connected = false;
+                    }
+                }
+            } catch(falla) {
+                connected = false;
+                alert(`Falla al intentar la conexion \n Codigo de falla: \n ${falla}. \n Revise: \n   IP ${ipInfo} \n   Puerto ${puerto}`);
+                console.log(`Codigo de Error: ${falla}`);
+
+            }
+        }
+        function closeConexion(){
+            if (socket){
+                socket.close(1000, "Prueva terminada");
+            }
+        }
+        //Tengo que crear un sistema que escuche el teclado
+        document.addEventListener("keyup", (tecla) => keySave.delete(tecla.key.toLocaleLowerCase()));
+        document.addEventListener("keydown", (tecla)=>{
+            keySave.set(tecla.key.toLocaleLowerCase());
+
+            DesCode();
+        });
+        function DesCode(){
+            if (keySave.has("w")) {
+                if (keySave.has("a")) {
+                    motor(1,180);
+                    return;
+                }
+                if(keySave.has("d")){
+                    motor(1,0);
+                    return;
+                }
+                motor(1);
+                return;
+            }
+            if (keySave.has("s")){
+                if (keySave.has("a")) {
+                    motor(-1,180);
+                    return;
+                }
+                if(keySave.has("d")){
+                    motor(-1,0);
+                    return;
+                }
+                motor(-1);
+                return;
+            }
+            if (keySave.has("d")){
+                motor(0,0);
+            }
+            if (keySave.has("a")){
+                motor(0,180)
+            }
+        }
+        //Funciones para los botones y Datos para los motores
+        function motor(velocity, rotation = 90){
+            if (connected){
+                socket.send('V= '+ velocity + ' R= ' + rotation);
+            }else{
+                alert("Connection Requierment!!");
+            }
+        }
+    
+        const block = document.getElementById('help');
+        function displayBlock(){
+            if (block.style.display == 'none' || block.style.display == ''){
+                block.style.display = 'block';
+            }else{
+                block.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

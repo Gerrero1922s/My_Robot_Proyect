@@ -12,41 +12,39 @@ UnoR4WiFi_WebServer server(80);
 UnoR4WiFi_WebSocket* webSocket;
 
 Servo myservo;
-int input1 = 8; //Pin 1
-int input2 = 7; // Pin 0
-int input3 = 11; // PWN
+int direcion1 = 8; //Pin 1
+int direcion2 = 7; // Pin 0
+
 int speed = 0;
+int rota = 0;
+
+bool motion = false;
+int lastMessageTime = 0;
+const int time = 200;
+
+
+int servoM = 10;
 
 void onStartSocket(net::WebSocket& ws){
   Serial.print("New WebSocket Connection");
 }
 
 void onMessageSocket(net::WebSocket& ws, const net::WebSocket::DataType dataType, const char* message, uint16_t length){
-  Serial.print("[WebSocket] Received (");
-  Serial.print(length);
-  Serial.print(" bytes): ");
-  Serial.println(message);
 
-
+  motion = true;
+  lastMessageTime = millis();
   String msgStr = String(message);
   String response = "";
   
-  // Command processing
-  if (msgStr.equalsIgnoreCase("ping")) {
-    response = "pong";
-  } else {
-    response = "Echo: " + msgStr;
-  }
-
   //Movimiento hacia los lados
+  
   String velocidad = msgStr.substring(msgStr.indexOf("V") + 2, msgStr.indexOf("R"));
   String rotation = msgStr.substring(msgStr.indexOf("R") + 2);
   
-  MotorSis(velocidad.toInt(),rotation.toInt());
+  speed = velocidad.toInt();
+  rota = rotation.toInt();
 
-  if (webSocket != nullptr) {
-    webSocket->broadcastTXT(response);
-  }
+
 }
 
 void onClientClose(net::WebSocket& ws, const net::WebSocket::CloseCode code, const char* reason, uint16_t length){
@@ -61,12 +59,14 @@ void handleHome(WiFiClient& client, const String& method, const String& request,
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
-  while(!Serial);
-  myservo.attach(10);
 
-  pinMode(input1,OUTPUT);
-  pinMode(input2,OUTPUT);
-  pinMode(input3,OUTPUT);
+  while(!Serial);
+
+  myservo.attach(servoM);
+
+  pinMode(direcion1,OUTPUT);
+  pinMode(direcion2,OUTPUT);
+  //  pinMode(speed3,OUTPUT);
 
   status = WiFi.beginAP(SSID, PASSWORD);
 
@@ -107,32 +107,42 @@ void setup() {
   Serial.print(WiFi.localIP());
   Serial.println(":81");
 
-  digitalWrite(input1, 0);
-  digitalWrite(input2, 1);
-
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
 
-  analogWrite(input3, speed);
-  server.handleWebSocket();
-  server.handleClient();
+  sist();
+  while (motion){
+    sist();
+    if ( millis() - lastMessageTime > time){
+      motion = false;
+    }
+    MotorSis(speed, rota);
+    delay(30);
+  }
+  MotorSis(0,0);
   delay(30);
 }
 
-void MotorSis(int V, int R) {
+void sist(){
+    server.handleWebSocket();
+    server.handleClient();
+}
+
+void MotorSis(int V, int R) { // V = Velocidad, R = Rotacion o grado de Servo 
 
   if (V < 0){
-    speed = abs(V);
-    speed = (speed > 200) ? 200 : speed; 
-    digitalWrite(input1, 1);
-    digitalWrite(input2, 0);
+ 
+    digitalWrite(direcion1, 1);
+    digitalWrite(direcion2, 0);
 
-  }else {
-    speed = (V > 200) ? 200 : V;
-    digitalWrite(input1, 0);
-    digitalWrite(input2,1);
+  }else if (V > 0){
+   
+    digitalWrite(direcion1, 0);
+    digitalWrite(direcion2,1);
+  }else{
+    digitalWrite(direcion1, 0);
+    digitalWrite(direcion2, 0);
   }
 
   R = abs(R);
@@ -141,5 +151,4 @@ void MotorSis(int V, int R) {
   }
 
   myservo.write(R);
-  
 }
