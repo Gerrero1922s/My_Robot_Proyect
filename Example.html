@@ -14,6 +14,7 @@
             padding: 10px 20px;          /* Espaciado interno para que no toque los bordes */
             background-color: rgba(20, 163, 199, 0.822);
             position: relative;          /* Contenedor de referencia para el menú desplegable #help */
+            border-radius: 20px;
         }
 
         /* 2. Estilo para el botón de las tres líneas (hamburguesa) */
@@ -44,6 +45,7 @@
 
         main {
             height: 400px;
+            position: relative;
         }
 
         /* Ajuste vertical del panel de control central */
@@ -66,30 +68,63 @@
         }
 
         /* 3. Panel desplegable de ayuda ajustado respecto al nuevo header */
-        #help {
+        #menu {
             position: absolute;
             top: 100%;                   /* Se despliega exactamente debajo del header */
             left: 20px;                  /* Alineado con el botón de menú */
             height: 300px;
             width: 200px;
-            display: none;
+            display: block;
             background-color: rgba(36, 36, 51, 0.9); /* Más opaco para leer mejor sobre el fondo */
             z-index: 10;                 /* Asegura que flote por encima del contenido main */
+            border-radius: 20px;
         }
-
-        
+        #menu button{
+            margin-left: 20px;
+            width: 150px;
+            margin-top: 4px;
+        }
+        .buttonBar{
+            margin-top: 10px;
+        }
+        #Help{
+            position: absolute;
+            top: 50%;
+            left: 45%;
+            margin: 0;
+            height: 200px;
+            width: 200px;
+            display: none;
+            background-color: rgba(137, 212, 212, 0.856);
+            border-style: solid;
+            border-radius: 10px;
+            border-color: black;
+            z-index: 1;
+        }
     </style>
     <title>Robotic Control</title>
 <body>
     <header class="header">
-        <div class="header"><button onclick="displayBlock()">-<br>-<br>-<br></button></div>
+        <div class="header"><button onclick="displayBlock('menu')">-<br>-<br>-<br></button></div>
         <h1> RC Control </h1>
-        <h5><button onclick="alert('KeyWord: \n W = Foward, \n A = Right, S = Back, D = Left');">help</button> </h5>
-        <div id ="help">
-            <button onclick="socketConexion()">Start</button>
+        <div id ="menu">
+            <div class = "buttonBar" >
+                <button onclick="socketConexion()">Start</button>
+                <br>
+                <button onclick="displayBlock('Help')">Help</button>
+            </div>
         </div>
     </header>
     <main>
+        <div id="Help">
+            <p> 
+                Configuracion
+                <br>
+                Los botones Funcionan con el teclado: <br>
+                W = Foward, A = Right, S = Back, D = Left
+
+            </p>
+        </div>
         <div class = "Control"> 
             <div>
                 <button> W </button>
@@ -215,8 +250,8 @@
             }
         }
     
-        const block = document.getElementById('help');
-        function displayBlock(){
+        function displayBlock(object){
+            let block = document.getElementById(object);
             if (block.style.display == 'none' || block.style.display == ''){
                 block.style.display = 'block';
             }else{

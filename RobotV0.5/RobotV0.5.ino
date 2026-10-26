@@ -16,6 +16,8 @@ int direcion1 = 8; //Pin 1
 int direcion2 = 7; // Pin 0
 
 int speed = 0;
+int Maxrota = 130;
+int Minirota = 45;
 int rota = 0;
 
 bool motion = false;
@@ -102,7 +104,8 @@ void setup() {
     Serial.println("Failed to start WebSocket server");
     while(true);
   }
-
+  speed = 0;
+  rota = 90;
   Serial.print("WebSocket: ws://");
   Serial.print(WiFi.localIP());
   Serial.println(":81");
@@ -120,7 +123,7 @@ void loop() {
     MotorSis(speed, rota);
     delay(30);
   }
-  MotorSis();
+  MotorSis( 0 , 90);
   delay(30);
 }
 
@@ -129,7 +132,8 @@ void sist(){
     server.handleClient();
 }
 
-void MotorSis(int V = 0, int R = 90) { // V = Velocidad, R = Rotacion o grado de Servo 
+
+void MotorSis(int V, int R) { // V = Velocidad, R = Rotacion o grado de Servo 
 
   if (V < 0){
  
@@ -146,8 +150,10 @@ void MotorSis(int V = 0, int R = 90) { // V = Velocidad, R = Rotacion o grado de
   }
 
   R = abs(R);
-  if ( R > 180){ 
-    R = 180;
+  if ( R > Maxrota){ 
+    R = Maxrota;
+  }else if(R < Minirota){
+    R = Minirota;
   }
 
   myservo.write(R);
