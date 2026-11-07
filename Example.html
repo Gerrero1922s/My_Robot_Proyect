@@ -3,8 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   
-
     <style>
         /* 1. Limpieza del Header usando Flexbox para alinear todo verticalmente al centro */
         .header {
@@ -42,7 +40,6 @@
         .header h5 {
             margin: 0;
         }
-
         main {
             height: 400px;
             position: relative;
@@ -50,19 +47,29 @@
 
         /* Ajuste vertical del panel de control central */
         .Control {
+            display: flex;
+            flex-direction: row-reverse;     /* Los coloca uno al lado del otro (horizontal) */
+            align-items: center;     /* Centra verticalmente ambos elementos entre sí */
+            justify-content: center; /* Centra todo el grupo en medio de la pantalla */
+            gap: 400px;               /* Espacio de separación entre ambos controles */
             position: relative;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .div-Velocity{
             text-align: center;
-            top: 50%;                    /* Cambiado a 50% para un centrado más real */
-            transform: translateY(-50%); /* Centrado vertical absoluto respecto al contenedor main */
+            width: 20%;
         }
-
-        .Control button {
-            color: brown;
-            margin-bottom: 4px;
-            width: 30px;
-            height: 30px;
+        .div-Rotation{
+            text-align: center;
+            width: 50%;
         }
-
+        #inVelo{
+            writing-mode: sideways-lr;
+        }
+        #inRota {
+            accent-color: black;
+        }
         footer { 
             text-align: center;
         }
@@ -74,7 +81,7 @@
             left: 20px;                  /* Alineado con el botón de menú */
             height: 300px;
             width: 200px;
-            display: block;
+            display: none;
             background-color: rgba(36, 36, 51, 0.9); /* Más opaco para leer mejor sobre el fondo */
             z-index: 10;                 /* Asegura que flote por encima del contenido main */
             border-radius: 20px;
@@ -101,6 +108,25 @@
             border-color: black;
             z-index: 1;
         }
+        
+        #Setting{
+            position: absolute;
+            top: 50%;
+            left: 45%;
+            margin: 0;
+            height: 200px;
+            width: 200px;
+            display: none;
+            background-color: rgba(211, 90, 90, 0.856);
+            border-style: dashed;
+            border-radius: 10px;
+            border-color: black;
+            z-index: 1;
+        }
+        #Setting p{
+            margin: 0;
+        }
+        
     </style>
     <title>Robotic Control</title>
 <body>
@@ -112,7 +138,13 @@
                 <button onclick="socketConexion()">Start</button>
                 <br>
                 <button onclick="displayBlock('Help')">Help</button>
+                <br>
+                <button onclick="displayBlock('Setting')">Setting</button>
             </div>
+        </div>
+        <div class="Visual-Feedback">
+            <h4 id="FeedBack-Conection" style="background-color: red; border-radius: 35px; padding: 2px; margin: 0px; text-align: center;">Connected</h4>
+            <h5 id="FeedBack-Mode" style="background-color: green; border-radius: 35px; padding: 0px 5px 0px 5px; margin: 2px 10px 0px 10px; text-align: center;">Computer Mode</h5>
         </div>
     </header>
     <main>
@@ -121,19 +153,46 @@
                 Configuracion
                 <br>
                 Los botones Funcionan con el teclado: <br>
-                W = Foward, A = Right, S = Back, D = Left
-
+                W = Foward <br> 
+                A = Right <br> 
+                S = Back <br> 
+                D = Left <br>
             </p>
         </div>
-        <div class = "Control"> 
+        <div id="Setting">
+            <p style="text-align: center;"> Setting</p>
             <div>
-                <button> W </button>
-                
+                <label for="Rotacion-Right">Rotation Right</label>
+                <input  id="NumberA" type="number" inputmode="numeric" name="Rotacion-Right" value="120" min="90" max="125">
             </div>
             <div>
-                <button>A</button>
-                <button>S</button>
-                <button>D</button>
+                <label for="Rotacion-Left">Rotation Left</label>
+                <input id="NumberD" type="number" inputmode="numeric" name="Rotacion-Left" value="55" min="45" max="90">
+            </div>
+            <div>
+                <p>Computer Mode: <output id="ModoActivo"></output></p>
+                <button onclick="ChangeMode()">Change Mode</button>
+            </div>
+            <button onclick="AplySetting()">Aplicar</button>
+        </div>
+        <div class = "Control"> 
+            <div class="div-Rotation">
+                <label for="Giro">Rotacion: <output id="FeedBack-Giro" ></output></label>
+                <br>
+                <input type="range" name="Giro" id="inRota" value="90" list="mark-rota">
+                <datalist id="mark-rota">
+                    <option value="90"></option>
+                </datalist>
+            </div>
+            <div class="div-Velocity">
+                <label for="Velocity">Velocity</label>
+                <br>
+                <input type="range" name="Velocity" id="inVelo" step="1" value="0" min="-1" max="1" list="mark-velo">
+                <datalist id="mark-velo">
+                    <option value="1" label="Foward"></option>
+                    <option value="0" label="Stop"></option>
+                    <option value="-1" label="Backward"></option>
+                </datalist>
             </div>
         </div>
     </main>
@@ -157,6 +216,24 @@
         let ipInfo = '192.168.4.1';
         let puerto = "81";
 
+        let rotaA = 125; //Rotacion maxima o giro que tendra el Servo motor
+        let rotaD = 45; 
+
+        const valueA = document.getElementById('NumberA');
+        const valueD = document.getElementById('NumberD');
+        const inRotation = document.getElementById('inRota');
+        const inVelocity = document.getElementById('inVelo');
+        const notiComputerMode = document.getElementById('ModoActivo');//Para el area de configuracion
+        const NotiConection = document.getElementById('FeedBack-Conection');
+        const feedBack_Mode = document.getElementById('FeedBack-Mode');
+        const feedBack_Giro = document.getElementById('FeedBack-Giro');
+
+        let computerMode = true;
+        let previewMode = computerMode;
+        notiComputerMode.value = computerMode;
+        inRotation.min = rotaD;
+        inRotation.max = rotaA;
+        
         function socketConexion(){
             if (connected){
                 console.log("Cerrando conxion");
@@ -175,6 +252,7 @@
                     console.log(`Conexion establecidad ${ipInfo}`);
                     socket.send("Hello World");
                     connected = true;
+                    NotiConection.style.backgroundColor = "green";
                 }
 
                 socket.onmessage = (event) => {
@@ -184,14 +262,15 @@
                 socket.onclose = (event) => {
                     if (event.wasClean) {
                         alert(`Conexion se a cerrado con exito, y limpia mente. Code= ${event.code} reason= ${event.reason}`);
-                        connected = false;
                     }else{
-                        alert(`Conexion colapsado o Conexcion Cerrada \n Posible falla IP Error: ${ipInfo} \n Puerto: ${puerto}`);
-                        connected = false;
+                        alert(`Conexion colapsado o Conexcion Cerrada \n Posible falla IP Error: ${ipInfo} \n Puerto: ${puerto} \n ${event}`);
                     }
+                    connected = false;
+                    NotiConection.style.backgroundColor="red";
                 }
             } catch(falla) {
                 connected = false;
+                NotiConection.style.backgroundColor="red";
                 alert(`Falla al intentar la conexion \n Codigo de falla: \n ${falla}. \n Revise: \n   IP ${ipInfo} \n   Puerto ${puerto}`);
                 console.log(`Codigo de Error: ${falla}`);
 
@@ -206,50 +285,54 @@
         document.addEventListener("keyup", (tecla) => keySave.delete(tecla.key.toLocaleLowerCase()));
         document.addEventListener("keydown", (tecla)=>{
             keySave.set(tecla.key.toLocaleLowerCase());
-
             DesCode();
         });
         function DesCode(){
-            if (keySave.has("w")) {
-                if (keySave.has("a")) {
-                    motor(1,180);
+            if (computerMode){
+                if (keySave.has("w")) {
+                    if (keySave.has("a")) {
+                        motor(-1,rotaA);
+                        return;
+                    }
+                    if(keySave.has("d")){
+                        motor(-1,rotaD);
+                        return;
+                    }
+                    motor(-1);
                     return;
                 }
-                if(keySave.has("d")){
-                    motor(1,0);
+                if (keySave.has("s")){
+                    if (keySave.has("a")) {
+                        motor(1,rotaA);
+                        return;
+                    }
+                    if(keySave.has("d")){
+                        motor(1,rotaD);
+                        return;
+                    }
+                    motor(1);
                     return;
                 }
-                motor(1);
-                return;
-            }
-            if (keySave.has("s")){
-                if (keySave.has("a")) {
-                    motor(-1,180);
-                    return;
+                if (keySave.has("d")){
+                    motor(0,rotaD);
                 }
-                if(keySave.has("d")){
-                    motor(-1,0);
-                    return;
+                if (keySave.has("a")){
+                    motor(0,rotaA);
                 }
-                motor(-1);
-                return;
-            }
-            if (keySave.has("d")){
-                motor(0,0);
-            }
-            if (keySave.has("a")){
-                motor(0,180)
             }
         }
-        //Funciones para los botones y Datos para los motores
+        setInterval(() => {
+            if(!computerMode){
+                motor(inVelocity.valueAsNumber,inRotation.valueAsNumber);
+                feedBack_Giro.value = inRotation.valueAsNumber;
+            }
+        }, 50);
         function motor(velocity, rotation = 90){
             if (connected){
                 socket.send('V= '+ velocity + ' R= ' + rotation);
-            }else{
-                alert("Connection Requierment!!");
             }
         }
-    
+
         function displayBlock(object){
             let block = document.getElementById(object);
             if (block.style.display == 'none' || block.style.display == ''){
@@ -257,6 +340,28 @@
             }else{
                 block.style.display = 'none';
             }
+        }
+        function AplySetting(){
+            LimitationChange();
+            console.log( rotaA , rotaD);
+            computerMode = previewMode;
+            if (computerMode){
+                feedBack_Mode.style.backgroundColor="green";
+            }else{ 
+                feedBack_Mode.style.backgroundColor="red";
+            }
+            displayBlock('Setting');
+        }
+        function LimitationChange(){
+            rotaA = valueA.valueAsNumber;
+            rotaD = valueD.valueAsNumber;
+            inRotation.min = rotaD;
+            inRotation.max = rotaA;
+        }
+        function ChangeMode(){
+            previewMode = !computerMode;
+            notiComputerMode.value = previewMode;
+
         }
     </script>
 </body>

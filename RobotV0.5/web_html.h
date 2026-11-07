@@ -6,8 +6,6 @@ const char htmlPage[] = R"rawliteral(
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   
-
     <style>
         /* 1. Limpieza del Header usando Flexbox para alinear todo verticalmente al centro */
         .header {
@@ -17,6 +15,7 @@ const char htmlPage[] = R"rawliteral(
             padding: 10px 20px;          /* Espaciado interno para que no toque los bordes */
             background-color: rgba(20, 163, 199, 0.822);
             position: relative;          /* Contenedor de referencia para el menú desplegable #help */
+            border-radius: 20px;
         }
 
         /* 2. Estilo para el botón de las tres líneas (hamburguesa) */
@@ -47,29 +46,40 @@ const char htmlPage[] = R"rawliteral(
 
         main {
             height: 400px;
+            position: relative;
         }
 
         /* Ajuste vertical del panel de control central */
         .Control {
+            display: flex;
+            flex-direction: row-reverse;     /* Los coloca uno al lado del otro (horizontal) */
+            align-items: center;     /* Centra verticalmente ambos elementos entre sí */
+            justify-content: center; /* Centra todo el grupo en medio de la pantalla */
+            gap: 400px;               /* Espacio de separación entre ambos controles */
             position: relative;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .div-Velocity{
             text-align: center;
-            top: 50%;                    /* Cambiado a 50% para un centrado más real */
-            transform: translateY(-50%); /* Centrado vertical absoluto respecto al contenedor main */
+            width: 20%;
         }
-
-        .Control button {
-            color: brown;
-            margin-bottom: 4px;
-            width: 30px;
-            height: 30px;
+        .div-Rotation{
+            text-align: center;
+            width: 50%;
         }
-
+        #inVelo{
+            writing-mode: sideways-lr;
+        }
+        #inRota {
+            accent-color: black;
+        }
         footer { 
             text-align: center;
         }
 
         /* 3. Panel desplegable de ayuda ajustado respecto al nuevo header */
-        #help {
+        #menu {
             position: absolute;
             top: 100%;                   /* Se despliega exactamente debajo del header */
             left: 20px;                  /* Alineado con el botón de menú */
@@ -78,30 +88,110 @@ const char htmlPage[] = R"rawliteral(
             display: none;
             background-color: rgba(36, 36, 51, 0.9); /* Más opaco para leer mejor sobre el fondo */
             z-index: 10;                 /* Asegura que flote por encima del contenido main */
+            border-radius: 20px;
         }
-
+        #menu button{
+            margin-left: 20px;
+            width: 150px;
+            margin-top: 4px;
+        }
+        .buttonBar{
+            margin-top: 10px;
+        }
+        #Help{
+            position: absolute;
+            top: 50%;
+            left: 45%;
+            margin: 0;
+            height: 200px;
+            width: 200px;
+            display: none;
+            background-color: rgba(137, 212, 212, 0.856);
+            border-style: solid;
+            border-radius: 10px;
+            border-color: black;
+            z-index: 1;
+        }
         
+        #Setting{
+            position: absolute;
+            top: 50%;
+            left: 45%;
+            margin: 0;
+            height: 200px;
+            width: 200px;
+            display: none;
+            background-color: rgba(211, 90, 90, 0.856);
+            border-style: dashed;
+            border-radius: 10px;
+            border-color: black;
+            z-index: 1;
+        }
+        #Setting p{
+            margin: 0;
+
+        }
     </style>
     <title>Robotic Control</title>
 <body>
     <header class="header">
-        <div class="header"><button onclick="displayBlock()">-<br>-<br>-<br></button></div>
+        <div class="header"><button onclick="displayBlock('menu')">-<br>-<br>-<br></button></div>
         <h1> RC Control </h1>
-        <h5><button onclick="alert('KeyWord: \n W = Foward, \n A = Right, S = Back, D = Left');">help</button> </h5>
-        <div id ="help">
-            <button onclick="socketConexion()">Start</button>
+        <div id ="menu">
+            <div class = "buttonBar" >
+                <button onclick="socketConexion()">Start</button>
+                <br>
+                <button onclick="displayBlock('Help')">Help</button>
+                <br>
+                <button onclick="displayBlock('Setting')">Setting</button>
+            </div>
         </div>
+        <h4 id="NotiConection" style="background-color: red; border-radius: 35px; padding: 5px;">Connected</h4>
     </header>
     <main>
-        <div class = "Control"> 
+        <div id="Help">
+            <p> 
+                Configuracion
+                <br>
+                Los botones Funcionan con el teclado: <br>
+                W = Foward, A = Right, S = Back, D = Left
+
+            </p>
+        </div>
+        <div id="Setting">
+            <p style="text-align: center;"> Setting</p>
             <div>
-                <button> W </button>
-                
+                <label for="Rotacion-Right">Rotation Right</label>
+                <input  id="NumberA" type="number" inputmode="numeric" name="Rotacion-Right" value="120" min="90" max="125">
             </div>
             <div>
-                <button>A</button>
-                <button>S</button>
-                <button>D</button>
+                <label for="Rotacion-Left">Rotation Left</label>
+                <input id="NumberD" type="number" inputmode="numeric" name="Rotacion-Left" value="55" min="45" max="90">
+            </div>
+            <div>
+                <p>Computer Mode: <output id="ModoActivo"></output></p>
+                <button onclick="changeMode()">Change Mode</button>
+            </div>
+            <button onclick="AplySetting()">Aplicar</button>
+        </div>
+        <div class = "Control"> 
+            <div class="div-Rotation">
+                <label for="Giro">Rotacion</label>
+                <br>
+                <input type="range" name="Giro" id="inRota" value="90" list="mark-rota">
+                <datalist id="mark-rota">
+                    <option value="90"></option>
+                </datalist>
+            </div>
+            <div class="div-Velocity">
+                <label for="Velocity">Velocity</label>
+                <br>
+                <input type="range" name="Velocity" id="inVelo" step="1" value="0" min="-1" max="1" list="mark-velo">
+                <datalist id="mark-velo">
+                    <option value="1"></option>
+                    <option value="0"></option>
+                    <option value="-1"></option>
+                </datalist>
             </div>
         </div>
     </main>
@@ -125,6 +215,21 @@ const char htmlPage[] = R"rawliteral(
         let ipInfo = '192.168.4.1';
         let puerto = "81";
 
+        let rotaA = 125; //Rotacion maxima o giro que tendra el Servo motor
+        let rotaD = 45; 
+
+        const valueA = document.getElementById('NumberA');
+        const valueD = document.getElementById('NumberD');
+        const inRotation = document.getElementById('inRota');
+        const inVelocity = document.getElementById('inVelo');
+        const notiComputerMode = document.getElementById('ModoActivo');
+        const NotiConection = document.getElementById('NotiConection');
+        
+        inRotation.min = rotaD;
+        inRotation.max = rotaA;
+        let computerMode = true;
+        notiComputerMode.value = computerMode;
+
         function socketConexion(){
             if (connected){
                 console.log("Cerrando conxion");
@@ -143,6 +248,7 @@ const char htmlPage[] = R"rawliteral(
                     console.log(`Conexion establecidad ${ipInfo}`);
                     socket.send("Hello World");
                     connected = true;
+                    NotiConection.style.backgroundColor = "green";
                 }
 
                 socket.onmessage = (event) => {
@@ -152,14 +258,15 @@ const char htmlPage[] = R"rawliteral(
                 socket.onclose = (event) => {
                     if (event.wasClean) {
                         alert(`Conexion se a cerrado con exito, y limpia mente. Code= ${event.code} reason= ${event.reason}`);
-                        connected = false;
                     }else{
                         alert(`Conexion colapsado o Conexcion Cerrada \n Posible falla IP Error: ${ipInfo} \n Puerto: ${puerto}`);
-                        connected = false;
                     }
+                    connected = false;
+                    NotiConection.style.backgroundColor="red";
                 }
             } catch(falla) {
                 connected = false;
+                NotiConection.style.backgroundColor="red";
                 alert(`Falla al intentar la conexion \n Codigo de falla: \n ${falla}. \n Revise: \n   IP ${ipInfo} \n   Puerto ${puerto}`);
                 console.log(`Codigo de Error: ${falla}`);
 
@@ -174,57 +281,72 @@ const char htmlPage[] = R"rawliteral(
         document.addEventListener("keyup", (tecla) => keySave.delete(tecla.key.toLocaleLowerCase()));
         document.addEventListener("keydown", (tecla)=>{
             keySave.set(tecla.key.toLocaleLowerCase());
-
             DesCode();
         });
         function DesCode(){
-            if (keySave.has("w")) {
-                if (keySave.has("a")) {
-                    motor(1,180);
+            if (computerMode){
+                if (keySave.has("w")) {
+                    if (keySave.has("a")) {
+                        motor(1,rotaA);
+                        return;
+                    }
+                    if(keySave.has("d")){
+                        motor(1,rotaD);
+                        return;
+                    }
+                    motor(1);
                     return;
                 }
-                if(keySave.has("d")){
-                    motor(1,0);
+                if (keySave.has("s")){
+                    if (keySave.has("a")) {
+                        motor(-1,rotaA);
+                        return;
+                    }
+                    if(keySave.has("d")){
+                        motor(-1,rotaD);
+                        return;
+                    }
+                    motor(-1);
                     return;
                 }
-                motor(1);
-                return;
-            }
-            if (keySave.has("s")){
-                if (keySave.has("a")) {
-                    motor(-1,180);
-                    return;
+                if (keySave.has("d")){
+                    motor(0,rotaD);
                 }
-                if(keySave.has("d")){
-                    motor(-1,0);
-                    return;
+                if (keySave.has("a")){
+                    motor(0,rotaA);
                 }
-                motor(-1);
-                return;
-            }
-            if (keySave.has("d")){
-                motor(0,0);
-            }
-            if (keySave.has("a")){
-                motor(0,180)
             }
         }
-        //Funciones para los botones y Datos para los motores
+        setInterval(() => {
+            if(!computerMode){
+                motor(inVelocity.valueAsNumber,inRotation.valueAsNumber);
+                computerMode.value = inRotation.valueAsNumber;
+            }
+        }, 50);
         function motor(velocity, rotation = 90){
             if (connected){
                 socket.send('V= '+ velocity + ' R= ' + rotation);
-            }else{
-                alert("Connection Requierment!!");
             }
         }
-    
-        const block = document.getElementById('help');
-        function displayBlock(){
+
+        function displayBlock(object){
+            let block = document.getElementById(object);
             if (block.style.display == 'none' || block.style.display == ''){
                 block.style.display = 'block';
             }else{
                 block.style.display = 'none';
             }
+        }
+        function AplySetting(){
+            rotaA = valueA.valueAsNumber;
+            rotaD = valueD.valueAsNumber;
+            console.log( rotaA , rotaD);
+            displayBlock('Setting');
+        }
+        function changeMode(){
+            computerMode = !computerMode;
+            notiComputerMode.value = computerMode;
+
         }
     </script>
 </body>

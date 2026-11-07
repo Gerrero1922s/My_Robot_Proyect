@@ -46,7 +46,6 @@ void onMessageSocket(net::WebSocket& ws, const net::WebSocket::DataType dataType
   speed = velocidad.toInt();
   rota = rotation.toInt();
 
-
 }
 
 void onClientClose(net::WebSocket& ws, const net::WebSocket::CloseCode code, const char* reason, uint16_t length){
