@@ -43,7 +43,6 @@ const char htmlPage[] = R"rawliteral(
         .header h5 {
             margin: 0;
         }
-
         main {
             height: 400px;
             position: relative;
@@ -129,8 +128,8 @@ const char htmlPage[] = R"rawliteral(
         }
         #Setting p{
             margin: 0;
-
         }
+        
     </style>
     <title>Robotic Control</title>
 <body>
@@ -146,7 +145,10 @@ const char htmlPage[] = R"rawliteral(
                 <button onclick="displayBlock('Setting')">Setting</button>
             </div>
         </div>
-        <h4 id="NotiConection" style="background-color: red; border-radius: 35px; padding: 5px;">Connected</h4>
+        <div class="Visual-Feedback">
+            <h4 id="FeedBack-Conection" style="background-color: red; border-radius: 35px; padding: 2px; margin: 0px; text-align: center;">Connected</h4>
+            <h5 id="FeedBack-Mode" style="background-color: green; border-radius: 35px; padding: 0px 5px 0px 5px; margin: 2px 10px 0px 10px; text-align: center;">Computer Mode</h5>
+        </div>
     </header>
     <main>
         <div id="Help">
@@ -154,8 +156,10 @@ const char htmlPage[] = R"rawliteral(
                 Configuracion
                 <br>
                 Los botones Funcionan con el teclado: <br>
-                W = Foward, A = Right, S = Back, D = Left
-
+                W = Foward <br> 
+                A = Right <br> 
+                S = Back <br> 
+                D = Left <br>
             </p>
         </div>
         <div id="Setting">
@@ -170,13 +174,13 @@ const char htmlPage[] = R"rawliteral(
             </div>
             <div>
                 <p>Computer Mode: <output id="ModoActivo"></output></p>
-                <button onclick="changeMode()">Change Mode</button>
+                <button onclick="ChangeMode()">Change Mode</button>
             </div>
             <button onclick="AplySetting()">Aplicar</button>
         </div>
         <div class = "Control"> 
             <div class="div-Rotation">
-                <label for="Giro">Rotacion</label>
+                <label for="Giro">Rotacion: <output id="FeedBack-Giro" ></output></label>
                 <br>
                 <input type="range" name="Giro" id="inRota" value="90" list="mark-rota">
                 <datalist id="mark-rota">
@@ -188,9 +192,9 @@ const char htmlPage[] = R"rawliteral(
                 <br>
                 <input type="range" name="Velocity" id="inVelo" step="1" value="0" min="-1" max="1" list="mark-velo">
                 <datalist id="mark-velo">
-                    <option value="1"></option>
-                    <option value="0"></option>
-                    <option value="-1"></option>
+                    <option value="1" label="Foward"></option>
+                    <option value="0" label="Stop"></option>
+                    <option value="-1" label="Backward"></option>
                 </datalist>
             </div>
         </div>
@@ -222,14 +226,17 @@ const char htmlPage[] = R"rawliteral(
         const valueD = document.getElementById('NumberD');
         const inRotation = document.getElementById('inRota');
         const inVelocity = document.getElementById('inVelo');
-        const notiComputerMode = document.getElementById('ModoActivo');
-        const NotiConection = document.getElementById('NotiConection');
-        
+        const notiComputerMode = document.getElementById('ModoActivo');//Para el area de configuracion
+        const NotiConection = document.getElementById('FeedBack-Conection');
+        const feedBack_Mode = document.getElementById('FeedBack-Mode');
+        const feedBack_Giro = document.getElementById('FeedBack-Giro');
+
+        let computerMode = true;
+        let previewMode = computerMode;
+        notiComputerMode.value = computerMode;
         inRotation.min = rotaD;
         inRotation.max = rotaA;
-        let computerMode = true;
-        notiComputerMode.value = computerMode;
-
+        
         function socketConexion(){
             if (connected){
                 console.log("Cerrando conxion");
@@ -259,7 +266,7 @@ const char htmlPage[] = R"rawliteral(
                     if (event.wasClean) {
                         alert(`Conexion se a cerrado con exito, y limpia mente. Code= ${event.code} reason= ${event.reason}`);
                     }else{
-                        alert(`Conexion colapsado o Conexcion Cerrada \n Posible falla IP Error: ${ipInfo} \n Puerto: ${puerto}`);
+                        alert(`Conexion colapsado o Conexcion Cerrada \n Posible falla IP Error: ${ipInfo} \n Puerto: ${puerto} \n ${event}`);
                     }
                     connected = false;
                     NotiConection.style.backgroundColor="red";
@@ -287,18 +294,6 @@ const char htmlPage[] = R"rawliteral(
             if (computerMode){
                 if (keySave.has("w")) {
                     if (keySave.has("a")) {
-                        motor(1,rotaA);
-                        return;
-                    }
-                    if(keySave.has("d")){
-                        motor(1,rotaD);
-                        return;
-                    }
-                    motor(1);
-                    return;
-                }
-                if (keySave.has("s")){
-                    if (keySave.has("a")) {
                         motor(-1,rotaA);
                         return;
                     }
@@ -307,6 +302,18 @@ const char htmlPage[] = R"rawliteral(
                         return;
                     }
                     motor(-1);
+                    return;
+                }
+                if (keySave.has("s")){
+                    if (keySave.has("a")) {
+                        motor(1,rotaA);
+                        return;
+                    }
+                    if(keySave.has("d")){
+                        motor(1,rotaD);
+                        return;
+                    }
+                    motor(1);
                     return;
                 }
                 if (keySave.has("d")){
@@ -320,7 +327,7 @@ const char htmlPage[] = R"rawliteral(
         setInterval(() => {
             if(!computerMode){
                 motor(inVelocity.valueAsNumber,inRotation.valueAsNumber);
-                computerMode.value = inRotation.valueAsNumber;
+                feedBack_Giro.value = inRotation.valueAsNumber;
             }
         }, 50);
         function motor(velocity, rotation = 90){
@@ -338,14 +345,25 @@ const char htmlPage[] = R"rawliteral(
             }
         }
         function AplySetting(){
-            rotaA = valueA.valueAsNumber;
-            rotaD = valueD.valueAsNumber;
+            LimitationChange();
             console.log( rotaA , rotaD);
+            computerMode = previewMode;
+            if (computerMode){
+                feedBack_Mode.style.backgroundColor="green";
+            }else{ 
+                feedBack_Mode.style.backgroundColor="red";
+            }
             displayBlock('Setting');
         }
-        function changeMode(){
-            computerMode = !computerMode;
-            notiComputerMode.value = computerMode;
+        function LimitationChange(){
+            rotaA = valueA.valueAsNumber;
+            rotaD = valueD.valueAsNumber;
+            inRotation.min = rotaD;
+            inRotation.max = rotaA;
+        }
+        function ChangeMode(){
+            previewMode = !computerMode;
+            notiComputerMode.value = previewMode;
 
         }
     </script>
