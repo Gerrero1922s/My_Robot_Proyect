@@ -129,7 +129,17 @@ const char htmlPage[] = R"rawliteral(
         #Setting p{
             margin: 0;
         }
-        
+        .HeatButton{
+            background-color: transparent; 
+            border-color: transparent; 
+            font-family: serif;
+            font-size: 100%;
+            font-weight: bold;
+        }
+        #menu button:hover, .HeatButton:hover{
+            background-color: rgba(187, 133, 248, 0.712);
+            border-radius: 100%;
+        }
     </style>
     <title>Robotic Control</title>
 <body>
@@ -146,8 +156,8 @@ const char htmlPage[] = R"rawliteral(
             </div>
         </div>
         <div class="Visual-Feedback">
-            <h4 id="FeedBack-Conection" style="background-color: red; border-radius: 35px; padding: 2px; margin: 0px; text-align: center;">Connected</h4>
-            <h5 id="FeedBack-Mode" style="background-color: green; border-radius: 35px; padding: 0px 5px 0px 5px; margin: 2px 10px 0px 10px; text-align: center;">Computer Mode</h5>
+            <h4 id="FeedBack-Conection" style="background-color: red; border-radius: 35px; padding: 2px; margin: 0px; text-align: center;"><button onclick="socketConexion()" class="HeatButton">Connected</button></h4>
+            <h5 id="FeedBack-Mode" style="background-color: red; border-radius: 35px; padding: 0px 5px 0px 5px; margin: 10px 10px 0px 10px; text-align: center;"><button onclick="ChangeMode(); ModeChangeAplication();" class="HeatButton">Computer Mode</button></h5>
         </div>
     </header>
     <main>
@@ -166,11 +176,11 @@ const char htmlPage[] = R"rawliteral(
             <p style="text-align: center;"> Setting</p>
             <div>
                 <label for="Rotacion-Right">Rotation Right</label>
-                <input  id="NumberA" type="number" inputmode="numeric" name="Rotacion-Right" value="120" min="90" max="125">
+                <input  id="NumberA" type="number" inputmode="numeric" name="Rotacion-Right" min="90" max="125">
             </div>
             <div>
                 <label for="Rotacion-Left">Rotation Left</label>
-                <input id="NumberD" type="number" inputmode="numeric" name="Rotacion-Left" value="55" min="45" max="90">
+                <input id="NumberD" type="number" inputmode="numeric" name="Rotacion-Left" min="45" max="90">
             </div>
             <div>
                 <p>Computer Mode: <output id="ModoActivo"></output></p>
@@ -192,9 +202,9 @@ const char htmlPage[] = R"rawliteral(
                 <br>
                 <input type="range" name="Velocity" id="inVelo" step="1" value="0" min="-1" max="1" list="mark-velo">
                 <datalist id="mark-velo">
-                    <option value="1" label="Foward"></option>
+                    <option value="-1" label="Foward"></option>
                     <option value="0" label="Stop"></option>
-                    <option value="-1" label="Backward"></option>
+                    <option value="1" label="Backward"></option>
                 </datalist>
             </div>
         </div>
@@ -219,7 +229,7 @@ const char htmlPage[] = R"rawliteral(
         let ipInfo = '192.168.4.1';
         let puerto = "81";
 
-        let rotaA = 125; //Rotacion maxima o giro que tendra el Servo motor
+        let rotaA = 145; //Rotacion maxima o giro que tendra el Servo motor
         let rotaD = 45; 
 
         const valueA = document.getElementById('NumberA');
@@ -231,9 +241,11 @@ const char htmlPage[] = R"rawliteral(
         const feedBack_Mode = document.getElementById('FeedBack-Mode');
         const feedBack_Giro = document.getElementById('FeedBack-Giro');
 
-        let computerMode = true;
+        let computerMode = false;
         let previewMode = computerMode;
         notiComputerMode.value = computerMode;
+        valueA.valueAsNumber = rotaA;
+        valueD.valueAsNumber = rotaD;
         inRotation.min = rotaD;
         inRotation.max = rotaA;
         
@@ -326,7 +338,7 @@ const char htmlPage[] = R"rawliteral(
         }
         setInterval(() => {
             if(!computerMode){
-                motor(inVelocity.valueAsNumber,inRotation.valueAsNumber);
+                motor((inVelocity.valueAsNumber)*-1,inRotation.valueAsNumber);
                 feedBack_Giro.value = inRotation.valueAsNumber;
             }
         }, 50);
@@ -347,13 +359,16 @@ const char htmlPage[] = R"rawliteral(
         function AplySetting(){
             LimitationChange();
             console.log( rotaA , rotaD);
+            ModeChangeAplication();
+            displayBlock('Setting');
+        }
+        function ModeChangeAplication(){
             computerMode = previewMode;
             if (computerMode){
                 feedBack_Mode.style.backgroundColor="green";
             }else{ 
                 feedBack_Mode.style.backgroundColor="red";
             }
-            displayBlock('Setting');
         }
         function LimitationChange(){
             rotaA = valueA.valueAsNumber;
@@ -362,7 +377,7 @@ const char htmlPage[] = R"rawliteral(
             inRotation.max = rotaA;
         }
         function ChangeMode(){
-            previewMode = !computerMode;
+            previewMode = !previewMode;
             notiComputerMode.value = previewMode;
 
         }
